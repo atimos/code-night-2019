@@ -6,11 +6,11 @@ use rocket::{
 };
 use serde::{
     de::{self, Deserializer},
-    Deserialize, Serialize,
+    Deserialize,
 };
 use std::{fmt::Display, str::FromStr};
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize)]
 pub struct Store {
     #[serde(rename = "store")]
     pub info: StoreInfo,
@@ -29,7 +29,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for &'a Store {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize)]
 pub struct StoreInfo {
     pub id: i32,
     pub address: String,
@@ -39,7 +39,7 @@ pub struct StoreInfo {
     pub lng: String,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize)]
 pub struct Beer {
     pub id: i32,
     pub sysid: i32,

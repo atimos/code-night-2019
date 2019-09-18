@@ -13,6 +13,24 @@ use serde::Serialize;
 use std::cmp::Reverse;
 use store::Store;
 
+#[derive(Serialize)]
+struct BeersInCountry<'a> {
+    country: &'a str,
+    count: usize,
+}
+
+#[derive(Serialize)]
+struct BeerApk<'a> {
+    apk: f32,
+    name: &'a str,
+}
+
+#[derive(Serialize, Default)]
+struct BeerKit<'a> {
+    price: f32,
+    beers: Vec<BeerApk<'a>>,
+}
+
 // Hur många ölsorter finns i butiken Hammarby Sjöstad, Lugnets Allé 26-28
 // id: 1337?
 #[get("/uppgift/1")]
@@ -21,11 +39,6 @@ fn uppgift1(store: &Store) -> Json<usize> {
 }
 
 // Vilket land har flest ölsorter representerade i samma butik?
-#[derive(Serialize, Debug, Default)]
-struct BeersInCountry<'a> {
-    country: &'a str,
-    count: usize,
-}
 #[get("/uppgift/2")]
 fn uppgift2(store: &Store) -> Option<Json<BeersInCountry>> {
     store
@@ -41,11 +54,6 @@ fn uppgift2(store: &Store) -> Option<Json<BeersInCountry>> {
 }
 
 // Vilken ölsort har bäst APK-värde i butiken av de öl som lanserats i år?
-#[derive(Serialize, Debug, Default)]
-struct BeerApk<'a> {
-    apk: f32,
-    beer: &'a str,
-}
 #[get("/uppgift/3")]
 fn uppgift3(store: &Store) -> Option<Json<BeerApk>> {
     store
@@ -54,18 +62,13 @@ fn uppgift3(store: &Store) -> Option<Json<BeerApk>> {
         .filter(|beer| beer.first_sale.starts_with("2019"))
         .sorted_by_key(|beer| Reverse(OrderedFloat(beer.apk())))
         .next()
-        .map(|beer| Json(BeerApk { apk: beer.apk(), beer: &beer.name }))
+        .map(|beer| Json(BeerApk { apk: beer.apk(), name: &beer.name }))
 }
 
 // Ni vill ta reda på om APK-värde är något att gå efter när man köper öl,
 // så ni ska ta fram ett provsmaknings-kit från en butik, med de 3 öl som har
 // bäst APK-värde och de 3 som har sämst APK-värde. Vad kostar kitet? Och vilka
 // öl blev det?
-#[derive(Serialize, Debug, Default)]
-struct BeerKit<'a> {
-    price: f32,
-    beers: Vec<&'a str>,
-}
 #[get("/uppgift/4")]
 fn uppgift4(store: &Store) -> Json<BeerKit> {
     let first_index_to_skip = 3;
@@ -75,13 +78,13 @@ fn uppgift4(store: &Store) -> Json<BeerKit> {
         store
             .beers
             .iter()
-            .sorted_by_key(|beer| Reverse(OrderedFloat(beer.apk())))
+            .sorted_by_key(|beer| OrderedFloat(beer.apk()))
             .enumerate()
             .filter(|(idx, _)| *idx < first_index_to_skip || *idx > last_index_to_skip)
-            .map(|(_, beer)| beer)
-            .fold(BeerKit::default(), |mut result, beer| {
-                result.price += beer.price;
-                result.beers.push(&beer.name);
+            .map(|(_, beer)| (beer.price, BeerApk { name: &beer.name, apk: beer.apk() }))
+            .fold(BeerKit::default(), |mut result, (price, item)| {
+                result.price += price;
+                result.beers.push(item);
                 result
             }),
     )
