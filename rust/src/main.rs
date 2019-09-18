@@ -40,29 +40,33 @@ fn uppgift1(store: &Store) -> Json<usize> {
 
 // Vilket land har flest ölsorter representerade i samma butik?
 #[get("/uppgift/2")]
-fn uppgift2(store: &Store) -> Option<Json<BeersInCountry>> {
-    store
-        .beers
-        .iter()
-        .sorted_by_key(|beer| &beer.country)
-        .group_by(|beer| &beer.country)
-        .into_iter()
-        .map(|(country, beers)| (country, beers.count()))
-        .sorted_by_key(|&(_, count)| Reverse(count))
-        .next()
-        .map(|(country, count)| Json(BeersInCountry { country: &country, count }))
+fn uppgift2(store: &Store) -> Json<Option<BeersInCountry>> {
+    Json(
+        store
+            .beers
+            .iter()
+            .sorted_by_key(|beer| &beer.country)
+            .group_by(|beer| &beer.country)
+            .into_iter()
+            .map(|(country, beers)| (country, beers.count()))
+            .sorted_by_key(|&(_, count)| Reverse(count))
+            .next()
+            .map(|(country, count)| BeersInCountry { country: &country, count }),
+    )
 }
 
 // Vilken ölsort har bäst APK-värde i butiken av de öl som lanserats i år?
 #[get("/uppgift/3")]
-fn uppgift3(store: &Store) -> Option<Json<BeerApk>> {
-    store
-        .beers
-        .iter()
-        .filter(|beer| beer.first_sale.starts_with("2019"))
-        .sorted_by_key(|beer| Reverse(OrderedFloat(beer.apk())))
-        .next()
-        .map(|beer| Json(BeerApk { apk: beer.apk(), name: &beer.name }))
+fn uppgift3(store: &Store) -> Json<Option<BeerApk>> {
+    Json(
+        store
+            .beers
+            .iter()
+            .filter(|beer| beer.first_sale.starts_with("2019"))
+            .sorted_by_key(|beer| Reverse(OrderedFloat(beer.apk())))
+            .next()
+            .map(|beer| BeerApk { apk: beer.apk(), name: &beer.name }),
+    )
 }
 
 // Ni vill ta reda på om APK-värde är något att gå efter när man köper öl,
@@ -94,8 +98,8 @@ fn uppgift4(store: &Store) -> Json<BeerKit> {
 fn all(store: &Store) -> JsonValue {
     json!({
         "uppgift1": uppgift1(store).into_inner(),
-        "uppgift2": uppgift2(store).map(Json::into_inner),
-        "uppgift3": uppgift3(store).map(Json::into_inner),
+        "uppgift2": uppgift2(store).into_inner(),
+        "uppgift3": uppgift3(store).into_inner(),
         "uppgift4": uppgift4(store).into_inner(),
     })
 }
