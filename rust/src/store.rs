@@ -1,3 +1,8 @@
+use rocket::{
+    http::Status,
+    request::{self, FromRequest, Request},
+    Outcome,
+};
 use serde::{
     de::{self, Deserializer},
     Deserialize, Serialize,
@@ -10,6 +15,17 @@ pub struct Store {
     pub info: StoreInfo,
     #[serde(rename = "items")]
     pub beers: Beers,
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for &'a Store {
+    type Error = ();
+
+    fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, Self::Error> {
+        match request.local_cache(|| load(1337)) {
+            Ok(store) => Outcome::Success(store),
+            Err(_) => Outcome::Failure((Status::InternalServerError, ())),
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -44,10 +60,10 @@ impl Beer {
     }
 }
 
-pub fn load(store_id: Option<usize>) -> Result<Store, ()> {
+fn load(store_id: usize) -> Result<Store, ()> {
     reqwest::get(&format!(
         "https://systembevakningsagenten.se/api/json/1.0/inventoryForStore.json?id={}",
-        store_id.unwrap_or(1337)
+        store_id
     ))
     .map_err(|_| ())?
     .json()
