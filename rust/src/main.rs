@@ -10,7 +10,6 @@ use rocket_contrib::{
     json::{Json, JsonValue},
 };
 use serde::Serialize;
-use std::cmp::Reverse;
 use store::Store;
 
 #[derive(Serialize)]
@@ -23,6 +22,12 @@ struct BeersInCountry<'a> {
 struct BeerApk<'a> {
     apk: f32,
     name: &'a str,
+}
+
+impl<'a> From<&'a store::Beer> for BeerApk<'a> {
+    fn from(beer: &'a store::Beer) -> Self {
+        Self { apk: beer.apk(), name: &beer.name }
+    }
 }
 
 #[derive(Serialize, Default)]
@@ -49,8 +54,7 @@ fn uppgift2(store: &Store) -> Json<Option<BeersInCountry>> {
             .group_by(|beer| &beer.country)
             .into_iter()
             .map(|(country, beers)| (country, beers.count()))
-            .sorted_by_key(|&(_, count)| Reverse(count))
-            .next()
+            .max_by_key(|&(_, count)| count)
             .map(|(country, count)| BeersInCountry { country: &country, count }),
     )
 }
@@ -63,9 +67,8 @@ fn uppgift3(store: &Store) -> Json<Option<BeerApk>> {
             .beers
             .iter()
             .filter(|beer| beer.first_sale.starts_with("2019"))
-            .sorted_by_key(|beer| Reverse(OrderedFloat(beer.apk())))
-            .next()
-            .map(|beer| BeerApk { apk: beer.apk(), name: &beer.name }),
+            .max_by_key(|beer| OrderedFloat(beer.apk()))
+            .map(From::from),
     )
 }
 
@@ -85,7 +88,7 @@ fn uppgift4(store: &Store) -> Json<BeerKit> {
             .sorted_by_key(|beer| OrderedFloat(beer.apk()))
             .enumerate()
             .filter(|(idx, _)| *idx < first_index_to_skip || *idx > last_index_to_skip)
-            .map(|(_, beer)| (beer.price, BeerApk { name: &beer.name, apk: beer.apk() }))
+            .map(|(_, beer)| (beer.price, From::from(beer)))
             .fold(BeerKit::default(), |mut result, (price, item)| {
                 result.price += price;
                 result.beers.push(item);
