@@ -14,7 +14,7 @@ pub struct Store {
     #[serde(rename = "store")]
     pub info: StoreInfo,
     #[serde(rename = "items")]
-    pub beers: Beers,
+    pub beers: Vec<Beer>,
 }
 
 impl<'a, 'r> FromRequest<'a, 'r> for &'a Store {
@@ -37,8 +37,6 @@ pub struct StoreInfo {
     pub lat: String,
     pub lng: String,
 }
-
-pub type Beers = Vec<Beer>;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Beer {
