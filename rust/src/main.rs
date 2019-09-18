@@ -16,8 +16,8 @@ use store::Store;
 // Hur många ölsorter finns i butiken Hammarby Sjöstad, Lugnets Allé 26-28
 // id: 1337?
 #[get("/uppgift/1")]
-fn uppgift1(store: &Store) -> Result<Json<usize>, ()> {
-    Ok(Json(store.beers.iter().unique_by(|beer| beer.sysid).count()))
+fn uppgift1(store: &Store) -> Json<usize> {
+    Json(store.beers.iter().unique_by(|beer| beer.sysid).count())
 }
 
 // Vilket land har flest ölsorter representerade i samma butik?
@@ -27,8 +27,8 @@ struct BeersInCountry<'a> {
     count: usize,
 }
 #[get("/uppgift/2")]
-fn uppgift2(store: &Store) -> Result<Option<Json<BeersInCountry>>, ()> {
-    Ok(store
+fn uppgift2(store: &Store) -> Option<Json<BeersInCountry>> {
+    store
         .beers
         .iter()
         .sorted_by_key(|beer| &beer.country)
@@ -37,7 +37,7 @@ fn uppgift2(store: &Store) -> Result<Option<Json<BeersInCountry>>, ()> {
         .map(|(country, beers)| (country, beers.count()))
         .sorted_by_key(|&(_, count)| Reverse(count))
         .next()
-        .map(|(country, count)| Json(BeersInCountry { country: &country, count })))
+        .map(|(country, count)| Json(BeersInCountry { country: &country, count }))
 }
 
 // Vilken ölsort har bäst APK-värde i butiken av de öl som lanserats i år?
@@ -47,14 +47,14 @@ struct BeerApk<'a> {
     beer: &'a str,
 }
 #[get("/uppgift/3")]
-fn uppgift3(store: &Store) -> Result<Option<Json<BeerApk>>, ()> {
-    Ok(store
+fn uppgift3(store: &Store) -> Option<Json<BeerApk>> {
+    store
         .beers
         .iter()
         .filter(|beer| beer.first_sale.starts_with("2019"))
         .sorted_by_key(|beer| Reverse(OrderedFloat(beer.apk())))
         .next()
-        .map(|beer| Json(BeerApk { apk: beer.apk(), beer: &beer.name })))
+        .map(|beer| Json(BeerApk { apk: beer.apk(), beer: &beer.name }))
 }
 
 // Ni vill ta reda på om APK-värde är något att gå efter när man köper öl,
@@ -67,11 +67,11 @@ struct BeerKit<'a> {
     beers: Vec<&'a str>,
 }
 #[get("/uppgift/4")]
-fn uppgift4(store: &Store) -> Result<Json<BeerKit>, ()> {
+fn uppgift4(store: &Store) -> Json<BeerKit> {
     let first_index_to_skip = 3;
     let last_index_to_skip = &store.beers.len() - 4;
 
-    Ok(Json(
+    Json(
         store
             .beers
             .iter()
@@ -84,17 +84,17 @@ fn uppgift4(store: &Store) -> Result<Json<BeerKit>, ()> {
                 result.beers.push(&beer.name);
                 result
             }),
-    ))
+    )
 }
 
 #[get("/uppgift")]
-fn all(store: &Store) -> Result<JsonValue, ()> {
-    Ok(json!({
-        "uppgift1": uppgift1(store)?.into_inner(),
-        "uppgift2": uppgift2(store)?.map(Json::into_inner),
-        "uppgift3": uppgift3(store)?.map(Json::into_inner),
-        "uppgift4": uppgift4(store)?.into_inner(),
-    }))
+fn all(store: &Store) -> JsonValue {
+    json!({
+        "uppgift1": uppgift1(store).into_inner(),
+        "uppgift2": uppgift2(store).map(Json::into_inner),
+        "uppgift3": uppgift3(store).map(Json::into_inner),
+        "uppgift4": uppgift4(store).into_inner(),
+    })
 }
 
 fn main() {

@@ -1,3 +1,4 @@
+use reqwest::{get, Result as ReqwestResult};
 use rocket::{
     http::Status,
     request::{self, FromRequest, Request},
@@ -21,7 +22,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for &'a Store {
     type Error = ();
 
     fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, Self::Error> {
-        match request.local_cache(|| load(1337)) {
+        match request.local_cache(load) {
             Ok(store) => Outcome::Success(store),
             Err(_) => Outcome::Failure((Status::InternalServerError, ())),
         }
@@ -58,14 +59,8 @@ impl Beer {
     }
 }
 
-fn load(store_id: usize) -> Result<Store, ()> {
-    reqwest::get(&format!(
-        "https://systembevakningsagenten.se/api/json/1.0/inventoryForStore.json?id={}",
-        store_id
-    ))
-    .map_err(|_| ())?
-    .json()
-    .map_err(|_| ())
+fn load() -> ReqwestResult<Store> {
+    get("https://systembevakningsagenten.se/api/json/1.0/inventoryForStore.json?id=1337")?.json()
 }
 
 fn f32_from_str<'de, T, D>(deserializer: D) -> Result<T, D::Error>
