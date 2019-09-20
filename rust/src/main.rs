@@ -78,15 +78,13 @@ fn uppgift3(store: &Store) -> Json<Option<BeerApk>> {
 // öl blev det?
 #[get("/uppgift/4")]
 fn uppgift4(store: &Store) -> Json<BeerKit> {
-    let range_to_skip = 3..=(store.beers.len() - 4);
-
     Json(
         store
             .beers
             .iter()
             .sorted_by_key(|beer| OrderedFloat(beer.apk()))
             .enumerate()
-            .filter(|(idx, _)| !range_to_skip.contains(idx))
+            .filter(|(idx, _)| !(3..=store.beers.len() - 4).contains(idx))
             .map(|(_, beer)| (beer.price, From::from(beer)))
             .fold(BeerKit::default(), |mut result, (price, item)| {
                 result.price += price;
