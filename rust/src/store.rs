@@ -13,7 +13,7 @@ use std::{fmt::Display, str::FromStr};
 #[derive(Deserialize)]
 pub struct Store {
     #[serde(rename = "store")]
-    pub info: StoreInfo,
+    pub info: Info,
     #[serde(rename = "items")]
     pub beers: Vec<Beer>,
 }
@@ -30,7 +30,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for &'a Store {
 }
 
 #[derive(Deserialize)]
-pub struct StoreInfo {
+pub struct Info {
     pub id: i32,
     pub address: String,
     pub city: String,
@@ -45,17 +45,17 @@ pub struct Beer {
     pub sysid: i32,
     pub name: String,
     pub country: String,
-    #[serde(deserialize_with = "f32_from_str")]
-    pub alcohol_vol: f32,
+    #[serde(deserialize_with = "f64_from_str")]
+    pub alcohol_vol: f64,
     pub volume_ml: i32,
-    #[serde(deserialize_with = "f32_from_str")]
-    pub price: f32,
+    #[serde(deserialize_with = "f64_from_str")]
+    pub price: f64,
     pub first_sale: String,
 }
 
 impl Beer {
-    pub fn apk(&self) -> f32 {
-        self.alcohol_vol / 100. * (self.volume_ml as f32) / self.price
+    pub fn apk(&self) -> f64 {
+        self.alcohol_vol / 100. * f64::from(self.volume_ml) / self.price
     }
 }
 
@@ -63,7 +63,7 @@ fn load() -> ReqwestResult<Store> {
     get("https://systembevakningsagenten.se/api/json/1.0/inventoryForStore.json?id=1337")?.json()
 }
 
-fn f32_from_str<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+fn f64_from_str<'de, T, D>(deserializer: D) -> Result<T, D::Error>
 where
     T: FromStr,
     T::Err: Display,

@@ -20,7 +20,7 @@ struct BeersInCountry<'a> {
 
 #[derive(Serialize)]
 struct BeerApk<'a> {
-    apk: f32,
+    apk: f64,
     name: &'a str,
 }
 
@@ -32,7 +32,7 @@ impl<'a> From<&'a store::Beer> for BeerApk<'a> {
 
 #[derive(Serialize, Default)]
 struct BeerKit<'a> {
-    price: f32,
+    price: f64,
     beers: Vec<BeerApk<'a>>,
 }
 
